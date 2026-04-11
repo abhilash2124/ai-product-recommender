@@ -1,5 +1,6 @@
 from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
+from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 # Load model
 model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -15,7 +16,39 @@ query = input("Enter your requirement: ")
 query_vector = model.encode(query).tolist()
 
 # Search in Qdrant
-results = client.query_points(collection_name="products", query=query_vector, limit=3)
+# results = client.query_points(
+#     collection_name="products", 
+#     query=query_vector, 
+#     limit=3
+#     )
+# Detect category from query
+category = None
+if "phone" in query.lower():
+    category = "phone"
+elif "laptop" in query.lower():
+    category = "laptop"
+
+# Apply filter if detected
+if category:
+    results = client.query_points(
+        collection_name="products",
+        query=query_vector,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="category",
+                    match=MatchValue(value=category)
+                )
+            ]
+        ),
+        limit=3
+    )
+else:
+    results = client.query_points(
+        collection_name="products",
+        query=query_vector,
+        limit=3
+    )
 
 print("\n🔍 Recommended Products:\n")
 
