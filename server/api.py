@@ -7,7 +7,14 @@ from dotenv import load_dotenv
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import re
+
 # from qdrant_client.models import Range
+from pymongo import MongoClient
+
+# MongoDB connection
+mongo_client = MongoClient("mongodb://localhost:27017/")
+db = mongo_client["ai_recommender"]
+collection = db["products"]
 
 load_dotenv()
 
@@ -42,6 +49,8 @@ def home():
 
 @app.get("/recommend")
 def recommend(query: str):
+    
+    products = list(collection.find({}, {"_id": 0}))
     
     if not query or query.strip() == "":
         return {
@@ -155,6 +164,7 @@ def recommend(query: str):
     {query}
 
     Answer:
+    include any other best options also best on user query at that price point if possible.
     """
 
     response = groq_client.chat.completions.create(
